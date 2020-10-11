@@ -17,7 +17,7 @@ NEXTPNR   ?= nextpnr-ice40
 ICEPACK   ?= icepack
 
 # Default target: run all required targets to build the DFU image.
-all: pong.dfu
+all: pong.bin
 	@true
 
 .DEFAULT: all
@@ -36,19 +36,18 @@ pong.asc: pong.json
 		--json $< \
 		--asc $@
 
-pong.bit: pong.asc
+# Use icepack to convert the FPGA configuration into a "bitstream" loadable onto the FPGA.
+# This is called the bitstream generation step.
+pong.bin: pong.asc
 	$(ICEPACK) $< $@
 
-pong.dfu: pong.bit
-	cp $< $@
-	dfu-suffix -v 1209 -p 70b1 -a $@
-
-load: pong.dfu
-	dfu-util -D $<
+# Use tinyprog to load the image onto the TinyFPGA-BX.
+load: pong.bin
+	tinyprog -p $<
 
 .PHONY: load
 
 clean:
-	rm -fr *.cf *.json *-report.txt *.asc *.bit *.dfu
+	rm -fr *.cf *.json *-report.txt *.asc *.bin
 
 .PHONY: clean
